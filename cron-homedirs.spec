@@ -1,6 +1,6 @@
 Name:           cron-homedirs
-Version:        0.4.0
-Release:        7
+Version:        0.4.1
+Release:        8
 Summary:        Relays cron periodic executables into accessible home directories
 
 License:        GPLv2
@@ -33,23 +33,17 @@ mkdir -p usr/libexec
 
 # ===========================================================================
 
-touch     ./etc/cron.hourly/homedirs
-chmod 755 ./etc/cron.hourly/homedirs
 cat    -> ./etc/cron.hourly/homedirs <<"EOF"
 exec /usr/libexec/cron-homedirs-regular hourly
 EOF
 
 # ===========================================================================
 
-touch     ./etc/cron.monthly/homedirs
-chmod 755 ./etc/cron.monthly/homedirs
 cat    -> ./etc/cron.monthly/homedirs <<"EOF"
 exec /usr/libexec/cron-homedirs-regular monthly
 EOF
 # ===========================================================================
 
-touch     ./etc/cron.weekly/homedirs
-chmod 755 ./etc/cron.weekly/homedirs
 cat    -> ./etc/cron.weekly/homedirs <<"EOF"
 exec /usr/libexec/cron-homedirs-regular weekly
 EOF
@@ -57,8 +51,6 @@ EOF
 
 # ===========================================================================
 
-touch     ./etc/cron.daily/homedirs
-chmod 755 ./etc/cron.daily/homedirs
 cat    -> ./etc/cron.daily/homedirs <<"EOF"
 exec /usr/libexec/cron-homedirs-regular daily
 EOF
@@ -97,8 +89,6 @@ EOF
 
 # ===========================================================================
 
-touch     ./usr/libexec/cron-homedirs-minute
-chmod 755 ./usr/libexec/cron-homedirs-minute
 cat    -> ./usr/libexec/cron-homedirs-minute <<"EOF"
 #!/bin/bash
 #
@@ -226,13 +216,12 @@ EOF
 # ===========================================================================
 
 %files
-/etc/cron.d/homedirs
-/etc/cron.hourly/homedirs
-/etc/cron.weekly/homedirs
-/etc/cron.monthly/homedirs
-/etc/cron.daily/homedirs
-/usr/libexec/cron-homedirs-subs
-/usr/libexec/cron-homedirs-minute
-/usr/libexec/cron-homedirs-regular
-
+%attr(644, root, root) /etc/cron.d/homedirs
+%attr(755, root, root) /etc/cron.hourly/homedirs
+%attr(755, root, root) /etc/cron.weekly/homedirs
+%attr(755, root, root) /etc/cron.monthly/homedirs
+%attr(755, root, root) /etc/cron.daily/homedirs
+%attr(644, root, root) /usr/libexec/cron-homedirs-subs
+%attr(755, root, root) /usr/libexec/cron-homedirs-minute
+%attr(755, root, root) /usr/libexec/cron-homedirs-regular
 
