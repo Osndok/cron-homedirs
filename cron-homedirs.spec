@@ -1,5 +1,5 @@
 Name:           cron-homedirs
-Version:        0.4.1
+Version:        0.4.2
 Release:        8
 Summary:        Relays cron periodic executables into accessible home directories
 
@@ -70,7 +70,7 @@ function process()
 	local FILE="$2"
 	if ! su $USER --command "$FILE >> $FILE.log 2>&1"
 	then
-		echo "$(date +"%Y-%m-%d %H:%M") - exit status $?" >> "$FILE.log"
+		echo "$(date +"%%Y-%%m-%%d %%H:%%M") - exit status $?" >> "$FILE.log"
 	fi
 }
 
@@ -100,7 +100,7 @@ cat    -> ./usr/libexec/cron-homedirs-minute <<"EOF"
 
 cd /
 
-MINUTE_NUMBER=$(calc "floor($(date +%s)/60)")
+MINUTE_NUMBER=$(calc "floor($(date +%%s)/60)")
 
 TMP=$(mktemp /tmp/cron-homedirs-minute.XXXXXXXX)
 
@@ -113,7 +113,8 @@ function execute_directory_scripts()
 		ls "$CRON_DIR" | while read FILE_BASE
 		do
 			FILE="$CRON_DIR/$FILE_BASE"
-			if test -x "$FILE" ; then
+			if test -x "$FILE"
+			then
 				process "$USER" "$FILE"
 			fi
 		done
@@ -132,17 +133,17 @@ do
 		for PERIOD in $(ls $USER_DIR/etc | sed -n 's/cron.\([0-9]*\)min/\1/p')
 		do
 
-			if [ $(calc ${MINUTE_NUMBER}%${PERIOD}) == 0 ]
+			if [ $(calc ${MINUTE_NUMBER}%%${PERIOD}) == 0 ]
 			then
 				execute_directory_scripts ${USER_DIR}/etc/cron.${PERIOD}min
 			fi
 		done
 
 		# We launch our hourly stuff at the 07 minute to help avoid the N-o-clock rush.
-		if [ "$(date +%M)" == "07" ]
+		if [ "$(date +%%M)" == "07" ]
 		then
 			# e.g. "9pm"
-			COMMON_TIME=$(date +"%l%P" | tr -d ' ')
+			COMMON_TIME=$(date +"%%l%%P" | tr -d ' ')
 			execute_directory_scripts ${USER_DIR}/etc/cron.${COMMON_TIME}
 		fi
 	fi
