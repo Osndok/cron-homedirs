@@ -1,6 +1,6 @@
 Name:           cron-homedirs
-Version:        0.5.0
-Release:        9
+Version:        0.5.1
+Release:        10
 Summary:        Relays cron periodic executables into accessible home directories
 
 License:        GPLv2
@@ -71,13 +71,16 @@ function process()
 
 	FAIL="${FILE}.fail"
 
-	if su $USER --command "$FILE >> $FILE.log 2>&1"
+	if su $USER --command "$FILE >> $FILE.log 2>&1" 2> "$FAIL"
 	then
 		rm -fv "$FAIL" >> $FILE.log 2>&1
 	else
 		CODE=$?
 		echo "$(date +"%Y-%m-%d %H:%M") - exit status $CODE" | tee $FAIL >> "$FILE.log"
 	fi
+
+	# Security: Could this 'chown' be abused with symlinks, or something?
+	chown "$USER:$USER" "${FILE}".*
 }
 
 function looks_like_user_home_dir()
