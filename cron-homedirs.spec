@@ -1,6 +1,6 @@
 Name:           cron-homedirs
-Version:        0.5.1
-Release:        10
+Version:        0.5.2
+Release:        11
 Summary:        Relays cron periodic executables into accessible home directories
 
 License:        GPLv2
@@ -73,7 +73,7 @@ function process()
 
 	if su $USER --command "$FILE >> $FILE.log 2>&1" 2> "$FAIL"
 	then
-		rm -fv "$FAIL" >> $FILE.log 2>&1
+		rm -f "$FAIL" >> $FILE.log 2>&1
 	else
 		CODE=$?
 		echo "$(date +"%Y-%m-%d %H:%M") - exit status $CODE" | tee $FAIL >> "$FILE.log"
