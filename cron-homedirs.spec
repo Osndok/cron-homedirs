@@ -1,6 +1,6 @@
 Name:           cron-homedirs
-Version:        0.5.2
-Release:        11
+Version:        0.6.0
+Release:        12
 Summary:        Relays cron periodic executables into accessible home directories
 
 License:        GPLv2
@@ -11,6 +11,7 @@ BuildArch:      noarch
 Requires:       calc
 Requires:       cronie
 Requires:       cronie-anacron
+Requires:       util-linux
 
 %description
 Allows periodic crontab entries to be specified within any user home directory
@@ -70,8 +71,9 @@ function process()
 	local FILE="$2"
 
 	FAIL="${FILE}.fail"
+	LOCK="${FILE}.lock"
 
-	if su $USER --command "$FILE >> $FILE.log 2>&1" 2> "$FAIL"
+	if su $USER --command "flock -w 10 $LOCK $FILE >> $FILE.log 2>&1" 2> "$FAIL"
 	then
 		rm -f "$FAIL" >> $FILE.log 2>&1
 	else
@@ -80,7 +82,7 @@ function process()
 	fi
 
 	# Security: Could this 'chown' be abused with symlinks, or something?
-	chown "$USER:$USER" "${FILE}".*
+	chown "$USER" "${FILE}".*
 }
 
 function looks_like_user_home_dir()
