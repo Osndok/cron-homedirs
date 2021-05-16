@@ -1,6 +1,6 @@
 Name:           cron-homedirs
-Version:        0.6.1
-Release:        13
+Version:        0.6.2
+Release:        15
 Summary:        Relays cron periodic executables into accessible home directories
 
 License:        GPLv2
@@ -73,7 +73,7 @@ function process()
 	FAIL="${FILE}.fail"
 	LOCK="${FILE}.lock"
 
-	if su $USER --command "flock -w 10 --verbose $LOCK $FILE >> $FILE.log 2>&1" 2> "$FAIL"
+	if su $USER --command "flock -w 10 --verbose $LOCK $FILE >> $FILE.log 2>&1" 2> "$FAIL" < /dev/null
 	then
 		rm -f "$FAIL" >> $FILE.log 2>&1
 	else
@@ -95,6 +95,15 @@ function looks_like_user_cron_dir()
 {
 	local USER_DIR="$1"
 	[ -d "$USER_DIR" ]
+}
+
+function user_can_execute()
+{
+	local USER="$1"
+	local FILE="$2"
+
+	# BUG: not safe for spaces, etc.
+	su "$USER" -c "test -x $FILE"
 }
 EOF
 
@@ -124,9 +133,10 @@ function execute_directory_scripts()
 		ls "$CRON_DIR" | while read FILE_BASE
 		do
 			FILE="$CRON_DIR/$FILE_BASE"
-			if test -x "$FILE"
+			if user_can_execute "$USER" "$FILE"
 			then
-				process "$USER" "$FILE"
+				# NB: the /dev/null keeps it from consuming our stdin
+				process "$USER" "$FILE" < /dev/null
 			fi
 		done
 	fi
@@ -212,9 +222,10 @@ do
 			while read FILE_BASE
 			do
 				FILE="$CRON_DIR/$FILE_BASE"
-				if test -x "$FILE"
+				if user_can_execute "$USER" "$FILE"
 				then
-					process "$USER" "$FILE"
+					# NB: the /dev/null keeps it from consuming our stdin
+					process "$USER" "$FILE" < /dev/null
 				fi
 			done < $TMP2
 		fi
