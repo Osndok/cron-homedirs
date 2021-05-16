@@ -1,6 +1,6 @@
 Name:           cron-homedirs
-Version:        0.6.0
-Release:        12
+Version:        0.6.1
+Release:        13
 Summary:        Relays cron periodic executables into accessible home directories
 
 License:        GPLv2
@@ -73,7 +73,7 @@ function process()
 	FAIL="${FILE}.fail"
 	LOCK="${FILE}.lock"
 
-	if su $USER --command "flock -w 10 $LOCK $FILE >> $FILE.log 2>&1" 2> "$FAIL"
+	if su $USER --command "flock -w 10 --verbose $LOCK $FILE >> $FILE.log 2>&1" 2> "$FAIL"
 	then
 		rm -f "$FAIL" >> $FILE.log 2>&1
 	else
