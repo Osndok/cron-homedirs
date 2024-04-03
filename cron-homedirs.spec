@@ -1,5 +1,5 @@
 Name:           cron-homedirs
-Version:        0.6.3
+Version:        0.6.4
 Release:        16
 Summary:        Relays cron periodic executables into accessible home directories
 
@@ -151,7 +151,7 @@ do
 	if looks_like_user_home_dir "$USER_DIR" && test -d "$USER_DIR/etc"
 	then
 
-		for PERIOD in $(ls $USER_DIR/etc | sed -n 's/cron.\([0-9]*\)min/\1/p')
+		for PERIOD in $(ls $USER_DIR/etc | sed -n 's/cron.\([0-9]*\)m\(in\)\{0,1\}/\1/p')
 		do
 
 			if [ $(calc ${MINUTE_NUMBER}%%${PERIOD}) == 0 ]
