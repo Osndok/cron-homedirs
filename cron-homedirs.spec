@@ -1,6 +1,6 @@
 Name:           cron-homedirs
-Version:        0.6.4
-Release:        16
+Version:        0.7.0
+Release:        17
 Summary:        Relays cron periodic executables into accessible home directories
 
 License:        GPLv2
@@ -121,6 +121,7 @@ cat    -> ./usr/libexec/cron-homedirs-minute <<"EOF"
 cd /
 
 MINUTE_NUMBER=$(calc "floor($(date +%%s)/60)")
+HOUR_NUMBER=$(calc "floor($(date +'%s')/3600)")
 
 TMP=$(mktemp /tmp/cron-homedirs-minute.XXXXXXXX)
 
@@ -150,22 +151,49 @@ do
 
 	if looks_like_user_home_dir "$USER_DIR" && test -d "$USER_DIR/etc"
 	then
-
-		for PERIOD in $(ls $USER_DIR/etc | sed -n 's/cron.\([0-9]*\)m\(in\)\{0,1\}/\1/p')
+		
+		for FILENAME in $USER_DIR/etc/*
 		do
+			# e.g. ~/etc/cron.30min, ~/etc/cron.30m
+			PERIOD=$(basename "$FILENAME" | sed -nE 's/cron\.([0-9]+)mi?n?s?$/\1/p')
 
-			if [ $(calc ${MINUTE_NUMBER}%%${PERIOD}) == 0 ]
+			if [ -z "$PERIOD" ]
 			then
-				execute_directory_scripts ${USER_DIR}/etc/cron.${PERIOD}min
+				continue
+			fi
+		
+			# Check if MINUTE_NUMBER is divisible by PERIOD
+			if [ $(calc "${MINUTE_NUMBER}%${PERIOD}") == 0 ]
+			then
+				execute_directory_scripts "${FILENAME}"
 			fi
 		done
+
 
 		# We launch our hourly stuff at the 07 minute to help avoid the N-o-clock rush.
 		if [ "$(date +%%M)" == "07" ]
 		then
-			# e.g. "9pm"
+			# e.g. ~/etc/cron.9pm
 			COMMON_TIME=$(date +"%%l%%P" | tr -d ' ')
 			execute_directory_scripts ${USER_DIR}/etc/cron.${COMMON_TIME}
+				
+			for FILENAME in $USER_DIR/etc/*
+			do
+				# e.g. ~/etc/cron.3h, ~/etc/cron.2hrs
+				PERIOD=$(basename "$FILENAME" | sed -nE 's/cron\.([0-9]+)hr?s?$/\1/p')
+
+				if [ -z "$PERIOD" ]
+				then
+					continue
+				fi
+			
+				# Check if HOUR_NUMBER is divisible by PERIOD
+				if [ $(calc "${HOUR_NUMBER}%${PERIOD}") == 0 ]
+				then
+					execute_directory_scripts "${FILENAME}"
+				fi
+			done
+
 		fi
 	fi
 done < $TMP
