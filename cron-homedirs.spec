@@ -1,6 +1,6 @@
 Name:           cron-homedirs
-Version:        0.7.0
-Release:        17
+Version:        0.7.1
+Release:        18
 Summary:        Relays cron periodic executables into accessible home directories
 
 License:        GPLv2
@@ -70,18 +70,25 @@ function process()
 	local USER="$1"
 	local FILE="$2"
 
-	FAIL="${FILE}.fail"
-	LOCK="${FILE}.lock"
+	local FAIL="${FILE}.fail"
+	local LOCK="${FILE}.lock"
+	local LOG="${FILE}.log"
 
-	if su $USER --command "flock --close --wait 10 --verbose $LOCK $FILE >> $FILE.log 2>&1" 2> "$FAIL" < /dev/null
+	# We should make sure that at least the files written inside the 'su' command are user-owned
+	# BEFORE we ask for them to be written to...
+	# TODO: Security issue? Could this 'chown' be abused with symlinks, or something?
+	chown --quiet "$FAIL" "$LOCK" "$LOG" || true
+
+	if su $USER --command "flock --close --wait 5 --verbose $LOCK $FILE >> $LOG 2>&1" 2> "$FAIL" < /dev/null
 	then
-		rm -f "$FAIL" >> $FILE.log 2>&1
+		rm -f "$FAIL" >> "$LOG" 2>&1
 	else
 		CODE=$?
-		echo "$(date +"%Y-%m-%d %H:%M") - exit status $CODE" | tee $FAIL >> "$FILE.log"
+		echo "$(date +"%Y-%m-%d %H:%M") - exit status $CODE" | tee $FAIL >> "$LOG"
 	fi
 
-	# Security: Could this 'chown' be abused with symlinks, or something?
+	# Is this still needed, now that we have a chown before we run the command?
+	# TODO: Security issue? Could this 'chown' be abused with symlinks, or something?
 	chown "$USER" "${FILE}".*
 }
 
