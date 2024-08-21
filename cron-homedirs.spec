@@ -1,6 +1,6 @@
 Name:           cron-homedirs
-Version:        0.7.1
-Release:        18
+Version:        0.7.2
+Release:        20
 Summary:        Relays cron periodic executables into accessible home directories
 
 License:        GPLv2
@@ -156,10 +156,10 @@ cut -d: -f1,6 /etc/passwd | sort | tr : ' ' > $TMP
 while read USER USER_DIR
 do
 
-	if looks_like_user_home_dir "$USER_DIR" && test -d "$USER_DIR/etc"
+	if looks_like_user_home_dir "$USER_DIR" && test -d "$USER_DIR/etc" -o test -d "$USER_DIR/.local/etc"
 	then
 		
-		for FILENAME in $USER_DIR/etc/*
+		for FILENAME in $USER_DIR/etc/* $USER_DIR/.local/etc/*
 		do
 			# e.g. ~/etc/cron.30min, ~/etc/cron.30m
 			PERIOD=$(basename "$FILENAME" | sed -nE 's/cron\.([0-9]+)mi?n?s?$/\1/p')
@@ -183,8 +183,9 @@ do
 			# e.g. ~/etc/cron.9pm
 			COMMON_TIME=$(date +"%%l%%P" | tr -d ' ')
 			execute_directory_scripts ${USER_DIR}/etc/cron.${COMMON_TIME}
+			execute_directory_scripts ${USER_DIR}/.local/etc/cron.${COMMON_TIME}
 				
-			for FILENAME in $USER_DIR/etc/*
+			for FILENAME in $USER_DIR/etc/* $USER_DIR/.local/etc/*
 			do
 				# e.g. ~/etc/cron.3h, ~/etc/cron.2hrs
 				PERIOD=$(basename "$FILENAME" | sed -nE 's/cron\.([0-9]+)hr?s?$/\1/p')
@@ -264,6 +265,23 @@ do
 				fi
 			done < $TMP2
 		fi
+
+		CRON_DIR=${USER_DIR}/.local/etc/cron.${PERIOD}
+
+		if looks_like_user_cron_dir "$CRON_DIR"
+		then
+			ls "$CRON_DIR" > $TMP2
+			while read FILE_BASE
+			do
+				FILE="$CRON_DIR/$FILE_BASE"
+				if user_can_execute "$USER" "$FILE"
+				then
+					# NB: the /dev/null keeps it from consuming our stdin
+					process "$USER" "$FILE" < /dev/null
+				fi
+			done < $TMP2
+		fi
+
 	fi
 done < $TMP
 
